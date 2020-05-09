@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= title %></title>
+
+    <link rel="stylesheet" href="/public/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel='stylesheet' href='/public/css/style.css' />
+
+    <script src="/public/vendor/jquery/jquery.min.js"></script>
+    <script src="/public/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1><%= title %></h1>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-primary btn-block mt-5" id="btn-add" data-toggle="modal"
+                        data-target="#add-modal">
+                        Add A List
+                    </button>
+                </div>
+
+
+                <table class="table table-striped mt-2" id="todo-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Nama</th>
+                            <th scope="col">Alamat</th>
+                            <th scope="col">Gaji</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todo-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="add-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Add TODO</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="add-name" placeholder="Nama Pegawai....">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="add-description" placeholder="Alamat....">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" class="form-control" id="add-location" placeholder="Gaji (Rp)">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="add-btn-close" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="add-btn-add" data-dismiss="modal">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="edit-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Edit TODO</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-id">
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="edit-name" placeholder="Name">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="edit-description" placeholder="Description">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="edit-location" placeholder="Location">
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="edit-btn-close"
+                        data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="edit-btn-edit" data-dismiss="modal">Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            fetch();
+
+            $("#add-btn-add").click(function () {
+                $.post("add", {
+                        name: $("#add-name").val(),
+                        description: $("#add-description").val(),
+                        location: $("#add-location").val(),
+                    },
+                    function (data, status) {
+                        fetch();
+                    });
+            });
+
+            $("#edit-btn-edit").click(function () {
+                $.post("edit", {
+                        id: $("#edit-id").val(),
+                        name: $("#edit-name").val(),
+                        description: $("#edit-description").val(),
+                        location: $("#edit-location").val(),
+                    },
+                    function (data, status) {
+                        fetch();
+                    });
+            });
+        });
+
+        $('#edit-modal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var recipient = button.data('id')
+            console.log(recipient);
+            var modal = $(this);
+            $.get("read/" + recipient, function (data, status) {
+                modal.find('#edit-id').val(data._id);
+                modal.find('#edit-name').val(data.name);
+                modal.find('#edit-description').val(data.description);
+                modal.find('#edit-location').val(data.location);
+            });
+        })
+
+        function deleteItem(id) {
+            $.get("delete/" + id, function (data, status) {
+                fetch();
+            });
+        }
+
+        function fetch() {
+            $("#todo-table-body").empty();
+
+            $.get("list", function (data, status) {
+                data.forEach((item, index) => {
+                    $('#todo-table > tbody:last-child').append(
+                        `<tr>
+                            <td>${index}</td>
+                            <td>${item.name}</td>
+                            <td>${item.description}</td>
+                            <td>${item.location}</td>
+                            <td>
+                                <button class="btn btn-success" data-toggle="modal" data-target="#edit-modal" data-id="${item._id}" id="edit-btn-${item._id}">Edit</button>
+                                <button onclick="deleteItem('${item._id}');" class="btn btn-danger" id="delete-btn-${item._id}">Delete</button>
+                            </td>
+                        </tr>`
+                    );
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
